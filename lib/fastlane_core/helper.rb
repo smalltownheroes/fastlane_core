@@ -2,7 +2,6 @@ require 'logger'
 
 module FastlaneCore
   module Helper
-
     # Logging happens using this method
     def self.log
       if is_test?
@@ -49,7 +48,22 @@ module FastlaneCore
       defined?SpecHelper
     end
 
-    # Use Helper.test? instead
+    # @return [boolean] true if building in a known CI environment
+    def self.ci?
+      # Check for Jenkins, Travis CI, ... environment variables
+      ['JENKINS_URL', 'TRAVIS', 'CIRCLECI', 'CI'].each do |current|
+        return true if ENV.key?(current)
+      end
+      return false
+    end
+
+    # Is the currently running computer a Mac?
+    def self.mac?
+      (/darwin/ =~ RUBY_PLATFORM) != nil
+    end
+
+    # Use Helper.test? and Helper.ci? instead (legacy calls)
+    # rubocop:disable Style/PredicateName
     def self.is_test?
       self.test?
     end
@@ -58,29 +72,33 @@ module FastlaneCore
       ci?
     end
 
-    # @return [boolean] true if building in a known CI environment
-    def self.ci?
-      # Check for Jenkins, Travis CI, ... environment variables
-      ['JENKINS_URL', 'TRAVIS', 'CIRCLECI', 'CI'].each do |current|
-        return true if ENV.has_key?(current)
-      end
-      return false
+    def self.is_mac?
+      self.mac?
     end
+    # rubocop:enable Style/PredicateName
+
+    # All Xcode Related things
+    #
 
     # @return the full path to the Xcode developer tools of the currently
     #  running system
     def self.xcode_path
-      return "" if self.is_test? and not self.is_mac?
-      `xcode-select -p`.gsub("\n", '') + "/"
+      return "" if self.is_test? and !self.is_mac?
+      `xcode-select -p`.delete("\n") + "/"
     end
 
-    def self.is_mac?
-      self.mac?
-    end
+    # @return The version of the currently used Xcode installation (e.g. "7.0")
+    def self.xcode_version
+      return @xcode_version if @xcode_version
 
-    # Is the currently running computer a Mac?
-    def self.mac?
-      (/darwin/ =~ RUBY_PLATFORM) != nil
+      begin
+        output = `DEVELOPER_DIR='' "#{xcode_path}/usr/bin/xcodebuild" -version`
+        @xcode_version = output.split("\n").first.split(' ')[1]
+      rescue => ex
+        Helper.log.error ex
+        Helper.log.error "Error detecting currently used Xcode installation".red
+      end
+      @xcode_version
     end
 
     # @return the full path to the iTMSTransporter executable
@@ -92,19 +110,19 @@ module FastlaneCore
         "../Applications/Application Loader.app/Contents/itms/bin/iTMSTransporter"
       ].each do |path|
         result = File.join(self.xcode_path, path)
-        return result if File.exists?(result)
+        return result if File.exist?(result)
       end
       raise "Could not find transporter at #{self.xcode_path}. Please make sure you set the correct path to your Xcode installation.".red
     end
 
     def self.fastlane_enabled?
       # This is called from the root context on the first start
-      @@enabled ||= File.directory?"./fastlane"
+      @@enabled ||= File.directory? "./fastlane"
     end
 
     # Path to the installed gem to load resources (e.g. resign.sh)
     def self.gem_path(gem_name)
-      if not Helper.is_test? and Gem::Specification::find_all_by_name(gem_name).any?
+      if !Helper.is_test? and Gem::Specification.find_all_by_name(gem_name).any?
         return Gem::Specification.find_by_name(gem_name).gem_dir
       else
         return './'

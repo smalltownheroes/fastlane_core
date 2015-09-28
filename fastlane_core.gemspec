@@ -8,14 +8,14 @@ Gem::Specification.new do |spec|
   spec.version       = FastlaneCore::VERSION
   spec.authors       = ["Felix Krause"]
   spec.email         = ["fastlanecore@krausefx.com"]
-  spec.summary       = %q{Contains all shared code/dependencies of the fastlane.tools}
-  spec.description   = %q{Contains all shared code/dependencies of the fastlane.tools}
+  spec.summary       = 'Contains all shared code/dependencies of the fastlane.tools'
+  spec.description   = 'Contains all shared code/dependencies of the fastlane.tools'
   spec.homepage      = "https://fastlane.tools"
   spec.license       = "MIT"
 
   spec.required_ruby_version = '>= 2.0.0'
 
-  spec.files = Dir["lib/**/*"] + %w{ README.md LICENSE }
+  spec.files = Dir["lib/**/*"] + %w( README.md LICENSE )
 
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
@@ -30,7 +30,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'rubyzip', '~> 1.1.6' # needed for extracting the ipa file
   spec.add_dependency 'plist', '~> 3.1' # needed for parsing provisioning profiles
 
-  spec.add_dependency 'credentials_manager', '>= 0.7.2' # fastlane password manager
+  spec.add_dependency 'credentials_manager', '>= 0.8.2', '< 1.0.0' # fastlane password manager
 
   # Frontend Scripting
   spec.add_dependency 'phantomjs', '~> 1.9.8' # dependency for poltergeist
